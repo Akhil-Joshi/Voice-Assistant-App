@@ -8,4 +8,6 @@ export const connectDB = async(uri)=>{
         console.log(error);
         throw error
     }
+
+    
 }
