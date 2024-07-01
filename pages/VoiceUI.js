@@ -8,7 +8,7 @@ import TranslationSwitch from '../components/TranslationSwitch';
 
 const VoiceUI = ({ navigation }) => {
     const { isDarkTheme } = useContext(ThemeContext);
-    const { translate} = useContext(TranslationContext);
+    const { translate } = useContext(TranslationContext);
 
     // Set background color based on theme
     const backgroundColor = isDarkTheme ? 'black' : 'white';
@@ -148,7 +148,7 @@ const VoiceUI = ({ navigation }) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        padding:10,
+        padding: 10,
     },
     container: {
         flex: 1,
