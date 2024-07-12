@@ -7,25 +7,27 @@ import { ThemeContext } from '../contexts/ThemeContext';
 import { TranslationContext } from '../contexts/TranslationContext';
 import CustomSwitch from '../components/CustomSwitch';
 import TranslationSwitch from '../components/TranslationSwitch';
+import axios from 'axios';
 
 const Register = ({ navigation }) => {
   const { isDarkTheme } = useContext(ThemeContext);
   const { translate } = useContext(TranslationContext);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSignup = () => {
-    // Handle signup logic here
-    if (!email || !password || !confirmPassword) {
+  const handleSignup = async () => {
+    // Validate inputs
+    if (!username || !email || !password || !confirmPassword) {
       alert(translate('allFieldsRequired'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
 
     if (!emailRegex.test(email)) {
       alert(translate('invalidEmailFormat'));
@@ -42,7 +44,18 @@ const Register = ({ navigation }) => {
       return;
     }
 
-    alert(`${translate('email')}: ${email}, ${translate('password')}: ${password}, ${translate('confirmPassword')}: ${confirmPassword}`);
+    // Perform signup logic here
+    try {
+      const response = await axios.post('http://localhost:3000/api/v1/user/new', {
+        name: username,
+        email: email,
+        password: password
+      });
+      alert(`Signup successful: ${response.data.message}`);
+      navigation.navigate('Login');
+    } catch (error) {
+      alert(`Signup failed: ${error.response?.data?.message || error.message}`);
+    }
   };
 
   const backgroundColor = isDarkTheme ? '#333' : '#f5f5f5';
@@ -78,8 +91,8 @@ const Register = ({ navigation }) => {
                 style={[styles.input, { color: textColor, borderColor: inputBorderColor, backgroundColor: inputBackgroundColor }]}
                 placeholder={translate('Username')}
                 placeholderTextColor="#aaa"
-                value={email}
-                onChangeText={setEmail}
+                value={username}
+                onChangeText={setUsername}
               />
               <Text style={[styles.label, { color: textColor }]}>{translate('email')}</Text>
               <TextInput
@@ -138,8 +151,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop:50,
-    padding:20,
+    paddingTop: 50,
+    padding: 20,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -211,7 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
-  }, 
+  },
   eyeIcon: {
     position: 'absolute',
     right: 10,

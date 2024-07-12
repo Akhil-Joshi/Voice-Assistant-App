@@ -7,6 +7,7 @@ import { ThemeContext } from '../contexts/ThemeContext';
 import { TranslationContext } from '../contexts/TranslationContext';
 import CustomSwitch from '../components/CustomSwitch';
 import TranslationSwitch from '../components/TranslationSwitch';
+import axios from 'axios';
 
 const Login = ({ navigation }) => {
   const { isDarkTheme } = useContext(ThemeContext);
@@ -15,8 +16,17 @@ const Login = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
-    alert(`${translate('username')}: ${username}, ${translate('password')}: ${password}`);
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/api/v1/user/login', {
+        email: username,
+        password: password,
+      });
+      navigation.navigate('WelcomePage');
+      alert(`Login successful: ${response.data.message}`);
+    } catch (error) {
+      alert(`Login failed: ${error.response.data.message}`);
+    }
   };
 
   const backgroundColor = isDarkTheme ? '#333' : '#f5f5f5';
@@ -68,7 +78,7 @@ const Login = ({ navigation }) => {
           <TouchableOpacity onPress={() => alert(translate('forgotPassword'))}>
             <Text style={[styles.reset, { color: textColor }]}>{translate('forgotPassword')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, { backgroundColor: buttonBackgroundColor }]} onPress={() => navigation.navigate('VoiceUI')}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: buttonBackgroundColor }]} onPress={handleLogin}>
             <Text style={[styles.buttonText, { color: buttonTextColor }]}>{translate('login')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
