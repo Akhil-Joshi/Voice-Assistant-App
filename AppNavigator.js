@@ -11,16 +11,16 @@ const Stack = createStackNavigator();
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator
+      <Stack.Navigator initialRouteName='VoiceUI'
         screenOptions={{
           headerShown: false,
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       >
-        <Stack.Screen name="WelcomePage" component={WelcomePage} />
+        <Stack.Screen name="VoiceUI" component={VoiceUI} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
-        <Stack.Screen name="VoiceUI" component={VoiceUI} />
+        <Stack.Screen name="WelcomePage" component={WelcomePage} />
 
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,22 +1,23 @@
-import React, { useContext, useRef, useState } from 'react';
+import React, { useContext, useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, Animated, Easing, TouchableOpacity, SafeAreaView, Text, TextInput } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { Audio } from 'expo-av'; // Import Audio from expo-av
 import CustomSwitch from '../components/CustomSwitch';
 import { ThemeContext } from '../contexts/ThemeContext';
 import { TranslationContext } from '../contexts/TranslationContext';
 import TranslationSwitch from '../components/TranslationSwitch';
+import { AudioContext } from '../contexts/AudioProvider';
 
 const VoiceUI = ({ navigation }) => {
     const { isDarkTheme } = useContext(ThemeContext);
     const { translate } = useContext(TranslationContext);
+    const { getPermission, hasMicrophonePermission } = useContext(AudioContext);
 
-    // Set background color based on theme
-    const backgroundColor = isDarkTheme ? 'black' : 'white';
-    const textColor = isDarkTheme ? '#fff' : '#333';
+    const [recording, setRecording] = useState(null);
+    const [isAnimating, setIsAnimating] = useState(false);
 
     const coreAnimation = useRef(new Animated.Value(0)).current;
     const atmosphereAnimation = useRef(new Animated.Value(0)).current;
-    const [isAnimating, setIsAnimating] = useState(false);
 
     const coreAnimationRef = useRef();
     const atmosphereAnimationRef = useRef();
@@ -84,11 +85,41 @@ const VoiceUI = ({ navigation }) => {
         }
     };
 
-    const handleIconPress = () => {
+    const handleIconPress = async () => {
+        await getPermission();
+
+        if (!hasMicrophonePermission) {
+            alert("Microphone permission is required to record audio.");
+            return;
+        }
+
         if (isAnimating) {
             stopAnimations();
+            if (recording) {
+                try {
+                    await recording.stopAndUnloadAsync();
+                    setRecording(null);
+                    console.log("Recording stopped");
+                } catch (error) {
+                    console.error("Failed to stop and unload recording", error);
+                }
+            }
         } else {
             startAnimations();
+            try {
+                const { status } = await Audio.requestPermissionsAsync();
+                if (status === 'granted') {
+                    const { recording } = await Audio.Recording.createAsync(
+                        Audio.RecordingOptionsPresets.HIGH_QUALITY
+                    );
+                    setRecording(recording);
+                    console.log("Recording started");
+                } else {
+                    alert("Microphone permission is required to start recording.");
+                }
+            } catch (error) {
+                console.error("Failed to start recording", error);
+            }
         }
         setIsAnimating(!isAnimating);
     };
@@ -103,11 +134,28 @@ const VoiceUI = ({ navigation }) => {
         outputRange: [0.85, 1], // Adjust the scale of the atmosphere
     });
 
+    useEffect(() => {
+        return () => {
+            // Safeguard against stopping and unloading an already unloaded recording
+            if (recording) {
+                recording.getStatusAsync().then(status => {
+                    if (status.isRecording) {
+                        recording.stopAndUnloadAsync().catch(error => {
+                            console.error("Failed to stop and unload recording on unmount", error);
+                        });
+                    }
+                }).catch(error => {
+                    console.error("Failed to get recording status on unmount", error);
+                });
+            }
+        };
+    }, [recording]);
+
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkTheme ? 'black' : 'white' }]}>
             <View style={styles.container}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <FontAwesome name="arrow-left" size={24} color={textColor} />
+                    <FontAwesome name="arrow-left" size={24} color={isDarkTheme ? '#fff' : '#333'} />
                 </TouchableOpacity>
                 <View style={styles.T_switchContainer}>
                     <TranslationSwitch />
@@ -117,29 +165,28 @@ const VoiceUI = ({ navigation }) => {
                 </View>
                 <View style={styles.searchContainer}>
                     <TextInput
-                        style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
+                        style={[styles.searchInput, { color: isDarkTheme ? '#fff' : '#333', borderColor: isDarkTheme ? '#fff' : '#333' }]}
                         placeholder={translate('search')}
-                        placeholderTextColor={textColor}
+                        placeholderTextColor={isDarkTheme ? '#fff' : '#333'}
                     />
                     <TouchableOpacity style={styles.searchButton}>
-                        <FontAwesome name="search" size={24} color={textColor} />
+                        <FontAwesome name="search" size={24} color={isDarkTheme ? '#fff' : '#333'} />
                     </TouchableOpacity>
                 </View>
                 <View style={styles.coreContainer}>
                     <TouchableOpacity onPress={handleIconPress}>
                         <Animated.View style={[styles.core, { transform: [{ scale: coreScale }] }]}>
-                            <FontAwesome name='microphone' size={30} color={textColor} />
+                            <FontAwesome name='microphone' size={30} color={isDarkTheme ? '#fff' : '#333'} />
                         </Animated.View>
                     </TouchableOpacity>
                 </View>
                 <View style={styles.atmosphereContainer}>
-                    <Text style={{ color: textColor }}>{translate('tapToSpeak')}</Text>
+                    <Text style={{ color: isDarkTheme ? '#fff' : '#333' }}>{translate('tapToSpeak')}</Text>
                     <Animated.View style={[styles.atmosphere, { transform: [{ scale: atmosphereScale }] }]} />
                 </View>
                 <View style={styles.commandContainer}>
-                    <Text style={[styles.placeholderText, { color: textColor }]}>{translate('spokenTextPlaceholder')}</Text>
+                    <Text style={[styles.placeholderText, { color: isDarkTheme ? '#fff' : '#333' }]}>{translate('spokenTextPlaceholder')}</Text>
                 </View>
-
             </View>
         </SafeAreaView>
     );

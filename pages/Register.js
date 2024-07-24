@@ -25,28 +25,28 @@ const Register = ({ navigation }) => {
       alert(translate('allFieldsRequired'));
       return;
     }
-
+  
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
-
+  
     if (!emailRegex.test(email)) {
       alert(translate('invalidEmailFormat'));
       return;
     }
-
+  
     if (!passwordRegex.test(password)) {
       alert(translate('passwordRequirements'));
       return;
     }
-
+  
     if (password !== confirmPassword) {
       alert(translate('passwordsDoNotMatch'));
       return;
     }
-
+  
     // Perform signup logic here
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/user/new', {
+      const response = await axios.post('http://192.168.1.64:3000/api/v1/user/new', {
         name: username,
         email: email,
         password: password
@@ -54,9 +54,16 @@ const Register = ({ navigation }) => {
       alert(`Signup successful: ${response.data.message}`);
       navigation.navigate('Login');
     } catch (error) {
-      alert(`Signup failed: ${error.response?.data?.message || error.message}`);
+      if (error.response) {
+        console.log(error.response); // Log the response error
+        alert(`Signup failed: ${error.response.data?.message || error.message}`);
+      } else {
+        console.log(error); // Log the full error object
+        alert(`Signup failed: ${error.message}`); // Handle other types of errors
+      }
     }
   };
+  
 
   const backgroundColor = isDarkTheme ? '#333' : '#f5f5f5';
   const textColor = isDarkTheme ? '#fff' : '#333';
